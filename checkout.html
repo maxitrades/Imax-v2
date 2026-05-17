@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iMAX Funded | Checkout</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- 
+    REAL INTEGRATION: Add Stripe.js here
+    <script src="https://js.stripe.com/v3/"></script>
+  -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #c9a227; --gold-light: #e0bc5a;
+      --black: #08070a; --surface: #0e0c10; --surface2: #131118;
+      --border: #1e1b26; --border-gold: rgba(201,162,39,0.35);
+      --text: #f0ece0; --text-muted: #7a7060; --text-dim: #3a3428;
+      --green: #2ecc71; --red: #e74c3c;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    body { font-family: var(--font-body); background: var(--black); color: var(--text); min-height: 100vh; display: flex; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: 0.5;
+    }
+
+    /* ─── SPLIT ─── */
+    .left { width: 400px; flex-shrink: 0; background: var(--surface); border-right: 0.5px solid var(--border-gold); padding: 48px 44px; display: flex; flex-direction: column; position: relative; z-index: 1; }
+    .right { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 48px 52px; position: relative; z-index: 1; }
+
+    .logo { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--gold); margin-bottom: 48px; }
+    .logo em { color: var(--text); font-style: normal; font-weight: 400; }
+
+    /* steps */
+    .steps-wrap { margin-bottom: 40px; }
+    .steps-row { display: flex; align-items: center; }
+    .step-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; border: 0.5px solid var(--border); color: var(--text-muted); flex-shrink: 0; font-family: var(--font-display); }
+    .step-dot.done { background: rgba(46,204,113,0.15); color: var(--green); border-color: rgba(46,204,113,0.4); }
+    .step-dot.active { background: var(--gold); color: var(--black); border-color: var(--gold); }
+    .step-line { flex: 1; height: 0.5px; background: var(--border); }
+    .step-line.done { background: rgba(46,204,113,0.4); }
+    .steps-labels { display: flex; justify-content: space-between; margin-top: 7px; }
+    .steps-labels span { font-size: 10px; color: var(--text-dim); text-align: center; flex: 1; }
+    .steps-labels span.done { color: var(--green); }
+    .steps-labels span.active { color: var(--gold); }
+
+    /* order summary */
+    .order-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 20px; }
+
+    .plan-box { background: rgba(201,162,39,0.06); border: 0.5px solid var(--border-gold); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+    .plan-name { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .plan-size { font-size: 13px; color: var(--gold); margin-bottom: 16px; }
+    .plan-rules { display: flex; flex-direction: column; gap: 8px; }
+    .plan-rule { display: flex; justify-content: space-between; font-size: 12px; }
+    .plan-rule-l { color: var(--text-muted); }
+    .plan-rule-r { color: var(--text); font-weight: 500; }
+
+    .price-breakdown { margin-bottom: 24px; }
+    .pb-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+    .pb-row:last-child { border-bottom: none; }
+    .pb-label { color: var(--text-muted); }
+    .pb-val { color: var(--text); font-weight: 500; }
+    .pb-total .pb-label { color: var(--text); font-size: 15px; }
+    .pb-total .pb-val { color: var(--gold); font-size: 18px; font-family: var(--font-display); }
+
+    .security-badges { display: flex; gap: 12px; margin-top: auto; padding-top: 24px; border-top: 0.5px solid var(--border); }
+    .badge { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+    .badge-icon { font-size: 14px; color: var(--text-muted); }
+
+    /* ─── PAYMENT FORM ─── */
+    .checkout-form { width: 100%; max-width: 460px; }
+
+    .form-title { font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .form-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+    .field input {
+      width: 100%; background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 6px; padding: 13px 14px; font-size: 14px; color: var(--text);
+      font-family: var(--font-body); outline: none; transition: border-color 0.2s;
+    }
+    .field input::placeholder { color: var(--text-dim); }
+    .field input:focus { border-color: var(--border-gold); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Stripe card element placeholder */
+    .stripe-field {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 6px; padding: 13px 14px; margin-bottom: 18px;
+      transition: border-color 0.2s;
+    }
+    .stripe-field:focus-within { border-color: var(--border-gold); }
+    /* Real integration: #card-element goes here */
+    .stripe-mock {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 14px; color: var(--text-dim);
+    }
+    .stripe-mock-icons { display: flex; gap: 8px; }
+    .card-brand { font-size: 11px; padding: 2px 6px; border: 0.5px solid var(--border); border-radius: 3px; color: var(--text-muted); }
+
+    .stripe-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+
+    .pay-btn {
+      width: 100%; padding: 16px;
+      background: var(--gold); color: var(--black);
+      border: none; border-radius: 6px; font-size: 15px; font-weight: 500;
+      font-family: var(--font-body); cursor: pointer; letter-spacing: 0.3px;
+      transition: background 0.2s, transform 0.15s; margin-top: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .pay-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .pay-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .pay-note { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 12px; }
+    .pay-note a { color: var(--text-muted); text-decoration: none; }
+
+    .powered-stripe { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; font-size: 11px; color: var(--text-dim); }
+
+    /* ─── SUCCESS OVERLAY ─── */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(8,7,10,0.95);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0;
+    }
+    .success-overlay.show { display: flex; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    .success-card {
+      background: var(--surface); border: 0.5px solid var(--border-gold);
+      border-radius: 16px; padding: 52px 56px; text-align: center;
+      max-width: 440px; width: 90%;
+      animation: popUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes popUp { from { transform:scale(0.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+    .success-icon { font-size: 48px; color: var(--green); margin-bottom: 20px; }
+    .success-title { font-family: var(--font-display); font-size: 32px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+    .success-sub { font-size: 14px; color: var(--text-muted); line-height: 1.7; margin-bottom: 32px; }
+    .success-plan { background: rgba(201,162,39,0.08); border: 0.5px solid var(--border-gold); border-radius: 8px; padding: 14px 20px; margin-bottom: 32px; font-size: 13px; color: var(--gold); }
+
+    .btn-dashboard {
+      background: var(--gold); color: var(--black);
+      border: none; padding: 14px 32px; border-radius: 6px;
+      font-size: 14px; font-weight: 500; font-family: var(--font-body);
+      cursor: pointer; width: 100%; letter-spacing: 0.3px;
+      transition: background 0.2s;
+    }
+    .btn-dashboard:hover { background: var(--gold-light); }
+
+    @media (max-width: 860px) {
+      body { flex-direction: column; }
+      .left { width: 100%; border-right: none; border-bottom: 0.5px solid var(--border-gold); padding: 32px 24px; }
+      .right { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SUCCESS OVERLAY -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <div class="success-title">You're in.</div>
+      <div class="success-sub">Payment confirmed. Your challenge account is being provisioned now — you'll receive MT5 credentials by email within 5 minutes.</div>
+      <div class="success-plan" id="successPlanLabel">Accelerator · $50,000 account</div>
+      <button class="btn-dashboard" onclick="window.location.href='dashboard.html'">Go to my dashboard →</button>
+    </div>
+  </div>
+
+  <!-- LEFT: Order summary -->
+  <div class="left">
+    <div class="logo">iMAX <em>Funded</em></div>
+
+    <div class="steps-wrap">
+      <div class="steps-row">
+        <div class="step-dot done">✓</div>
+        <div class="step-line done"></div>
+        <div class="step-dot done">✓</div>
+        <div class="step-line done"></div>
+        <div class="step-dot active">3</div>
+      </div>
+      <div class="steps-labels">
+        <span class="done">Account</span>
+        <span class="done">Challenge</span>
+        <span class="active">Payment</span>
+      </div>
+    </div>
+
+    <div class="order-title">Order summary</div>
+
+    <div class="plan-box">
+      <div class="plan-name" id="summaryPlan">Accelerator</div>
+      <div class="plan-size" id="summarySize">$50,000 account</div>
+      <div class="plan-rules">
+        <div class="plan-rule"><span class="plan-rule-l">Profit target</span><span class="plan-rule-r" id="ruleTarget">10%</span></div>
+        <div class="plan-rule"><span class="plan-rule-l">Max daily loss</span><span class="plan-rule-l">5%</span></div>
+        <div class="plan-rule"><span class="plan-rule-l">Max drawdown</span><span class="plan-rule-l">10%</span></div>
+        <div class="plan-rule"><span class="plan-rule-l">Profit split</span><span class="plan-rule-r" id="ruleSplit">Up to 95%</span></div>
+        <div class="plan-rule"><span class="plan-rule-l">Platform</span><span class="plan-rule-r">MetaTrader 5</span></div>
+      </div>
+    </div>
+
+    <div class="price-breakdown">
+      <div class="pb-row">
+        <span class="pb-label">Challenge fee</span>
+        <span class="pb-val" id="feeLine">$269</span>
+      </div>
+      <div class="pb-row">
+        <span class="pb-label">Processing</span>
+        <span class="pb-val">$0</span>
+      </div>
+      <div class="pb-row pb-total">
+        <span class="pb-label">Total due today</span>
+        <span class="pb-val" id="totalLine">$269</span>
+      </div>
+    </div>
+
+    <div class="security-badges">
+      <div class="badge"><span class="badge-icon">🔒</span> SSL secured</div>
+      <div class="badge"><span class="badge-icon">⚡</span> Instant access</div>
+      <div class="badge"><span class="badge-icon">↩</span> Money-back</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Payment form -->
+  <div class="right">
+    <div class="checkout-form">
+      <div class="form-title">Payment details</div>
+      <div class="form-sub">Processed securely by Stripe. iMAX never stores card data.</div>
+
+      <div class="field">
+        <label>Name on card</label>
+        <input type="text" id="cardName" placeholder="Kwame Mensah" />
+      </div>
+
+      <!-- Stripe card element goes here in production -->
+      <div class="stripe-label">Card details</div>
+      <div class="stripe-field">
+        <div class="stripe-mock">
+          <span>1234 5678 9012 3456</span>
+          <div class="stripe-mock-icons">
+            <span class="card-brand">VISA</span>
+            <span class="card-brand">MC</span>
+          </div>
+        </div>
+        <!-- Real: <div id="card-element"></div> -->
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Expiry</label>
+          <input type="text" placeholder="MM / YY" maxlength="7" />
+        </div>
+        <div class="field">
+          <label>CVC</label>
+          <input type="text" placeholder="•••" maxlength="4" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Billing country</label>
+        <input type="text" placeholder="Ghana" />
+      </div>
+
+      <button class="pay-btn" id="payBtn" onclick="handlePayment()">
+        <span>🔒</span>
+        <span id="payBtnText">Pay <span id="payAmount">$269</span> — Get funded</span>
+      </button>
+
+      <div class="pay-note">
+        By paying you agree to our <a href="#">Terms</a> and <a href="#">Risk Disclosure</a>. 
+        Refundable within 14 days if no trades are placed.
+      </div>
+
+      <div class="powered-stripe">
+        Secured by
+        <svg width="40" height="16" viewBox="0 0 60 25" fill="none"><text x="0" y="18" font-size="14" font-family="sans-serif" fill="#7a7060" font-weight="600">stripe</text></svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Pull from session (set in previous pages)
+    const plan = sessionStorage.getItem('imax_plan') || 'Accelerator';
+    const size = sessionStorage.getItem('imax_size') || '$50K';
+    const price = sessionStorage.getItem('imax_price') || '269';
+
+    const planRules = {
+      'Accelerator':     { target: '10%', split: 'Up to 95%' },
+      'Discipline Path': { target: '8% then 5%', split: 'Up to 90%' },
+      'Capital Builder': { target: 'None', split: 'Up to 80%' },
+    };
+
+    function formatSize(s) {
+      return s.replace('$','$').replace('K','K').replace('$200K','$200,000')
+        .replace('$100K','$100,000').replace('$50K','$50,000')
+        .replace('$25K','$25,000').replace('$10K','$10,000').replace('$5K','$5,000');
+    }
+
+    // Populate
+    document.getElementById('summaryPlan').textContent = plan;
+    document.getElementById('summarySize').textContent = formatSize(size) + ' account';
+    document.getElementById('feeLine').textContent = '$' + price;
+    document.getElementById('totalLine').textContent = '$' + price;
+    document.getElementById('payAmount').textContent = '$' + price;
+    document.getElementById('successPlanLabel').textContent = plan + ' · ' + formatSize(size) + ' account';
+    if (planRules[plan]) {
+      document.getElementById('ruleTarget').textContent = planRules[plan].target;
+      document.getElementById('ruleSplit').textContent = planRules[plan].split;
+    }
+
+    function handlePayment() {
+      const name = document.getElementById('cardName').value.trim();
+      if (!name) { document.getElementById('cardName').focus(); return; }
+
+      const btn = document.getElementById('payBtn');
+      btn.disabled = true;
+      document.getElementById('payBtnText').textContent = 'Processing payment…';
+
+      /*
+        REAL INTEGRATION:
+        const stripe = Stripe('pk_live_YOUR_KEY');
+        const { error, paymentMethod } = await stripe.createPaymentMethod({ type: 'card', card: cardElement });
+        Then POST to your server → create PaymentIntent → confirm → handle webhook
+        Webhook creates Supabase user record and triggers MT5 account provisioning
+      */
+
+      // Prototype: simulate Stripe response
+      setTimeout(() => {
+        document.getElementById('successOverlay').classList.add('show');
+      }, 1800);
+    }
+  </script>
+</body>
+</html>
