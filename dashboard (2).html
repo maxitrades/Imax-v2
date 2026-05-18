@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iMAX Funded | Trader Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #c9a227; --gold-light: #e0bc5a; --gold-dim: #8a6e18;
+      --black: #08070a; --surface: #0e0c10; --surface2: #131118;
+      --border: #1e1b26; --border-gold: rgba(201,162,39,0.35);
+      --text: #f0ece0; --text-muted: #7a7060; --text-dim: #3a3428;
+      --green: #2ecc71; --green-dim: rgba(46,204,113,0.12); --green-border: rgba(46,204,113,0.3);
+      --red: #e74c3c; --red-dim: rgba(231,76,60,0.12); --red-border: rgba(231,76,60,0.3);
+      --amber: #f39c12; --amber-dim: rgba(243,156,18,0.1); --amber-border: rgba(243,156,18,0.3);
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: var(--black); color: var(--text); font-size: 14px; line-height: 1.6; overflow-x: hidden; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; opacity: 0.5; }
+    .app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    /* SIDEBAR */
+    .sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 0.5px solid var(--border-gold); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+    .sidebar-logo { padding: 24px 24px 20px; border-bottom: 0.5px solid var(--border); }
+    .logo-text { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--gold); letter-spacing: 1px; }
+    .logo-text em { color: var(--text); font-style: normal; font-weight: 400; }
+    .logo-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+    .nav-group { margin-bottom: 4px; }
+    .nav-group-label { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text-dim); padding: 10px 24px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 24px; cursor: pointer; color: var(--text-muted); font-size: 13px; transition: all 0.15s; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: var(--text); background: rgba(201,162,39,0.05); }
+    .nav-item.active { color: var(--gold); border-left-color: var(--gold); background: rgba(201,162,39,0.08); }
+    .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+    .sidebar-footer { padding: 16px 24px; border-top: 0.5px solid var(--border); }
+    .trader-pill { display: flex; align-items: center; gap: 10px; }
+    .trader-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(201,162,39,0.12); border: 0.5px solid var(--border-gold); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--gold); flex-shrink: 0; }
+    .trader-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .trader-plan { font-size: 11px; color: var(--gold); }
+
+    /* MAIN */
+    .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; border-bottom: 0.5px solid var(--border); background: rgba(8,7,10,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 40; }
+    .topbar-left h1 { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--text); }
+    .topbar-left p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .phase-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(201,162,39,0.1); border: 0.5px solid var(--border-gold); padding: 6px 14px; border-radius: 40px; font-size: 11px; color: var(--gold); letter-spacing: 0.5px; transition: all 0.3s; }
+    .phase-badge.breached { background: var(--red-dim); border-color: var(--red-border); color: var(--red); }
+    .phase-badge.passed   { background: var(--green-dim); border-color: var(--green-border); color: var(--green); }
+    .phase-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .btn-payout { background: var(--gold); color: var(--black); border: none; padding: 8px 20px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; letter-spacing: 0.3px; transition: background 0.2s; font-family: var(--font-body); }
+    .btn-payout:hover { background: var(--gold-light); }
+    .btn-payout:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* CONTENT */
+    .content { padding: 32px 36px; flex: 1; }
+
+    /* ALERT */
+    .alert { display: none; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 8px; margin-bottom: 28px; font-size: 13px; }
+    .alert.visible { display: flex; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .alert.success { background: var(--green-dim); border: 0.5px solid var(--green-border); color: var(--green); }
+    .alert.warning { background: var(--amber-dim); border: 0.5px solid var(--amber-border); color: var(--amber); }
+    .alert.danger  { background: var(--red-dim);   border: 0.5px solid var(--red-border);   color: var(--red); }
+    .alert-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 20px 22px; transition: border-color 0.3s; }
+    .stat-card:hover { border-color: var(--border-gold); }
+    .stat-card.breach { border-color: var(--red-border); }
+    .stat-card.warn   { border-color: var(--amber-border); }
+    .stat-card-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .stat-card-value { font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--text); line-height: 1; transition: color 0.3s; }
+    .stat-card-value.green { color: var(--green); }
+    .stat-card-value.gold  { color: var(--gold);  }
+    .stat-card-value.red   { color: var(--red);   }
+    .stat-card-value.amber { color: var(--amber); }
+    .stat-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    /* PROGRESS */
+    .progress-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+    .progress-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 22px 24px; }
+    .progress-card-title { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+    .progress-item { margin-bottom: 18px; }
+    .progress-item:last-child { margin-bottom: 0; }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-label { font-size: 13px; color: var(--text-muted); }
+    .progress-value { font-size: 13px; font-weight: 500; transition: color 0.3s; }
+    .progress-value.green { color: var(--green); }
+    .progress-value.gold  { color: var(--gold);  }
+    .progress-value.red   { color: var(--red);   }
+    .progress-value.amber { color: var(--amber); }
+    .progress-bar-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s ease, background-color 0.3s; }
+
+    /* BOTTOM */
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 0.5px solid var(--border); }
+    .panel-title { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+    .panel-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; background: rgba(201,162,39,0.1); border: 0.5px solid var(--border-gold); color: var(--gold); padding: 3px 8px; border-radius: 3px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); padding: 10px 22px; text-align: left; border-bottom: 0.5px solid var(--border); font-weight: 400; }
+    tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(201,162,39,0.03); }
+    tbody tr.new-row { animation: flashRow 1.2s ease; }
+    @keyframes flashRow { 0%{background:rgba(201,162,39,0.15)} 100%{background:transparent} }
+    tbody td { padding: 11px 22px; font-size: 12px; color: var(--text-muted); }
+    tbody td:first-child { color: var(--text); font-weight: 500; }
+    .td-green { color: var(--green) !important; font-weight: 500; }
+    .td-red   { color: var(--red)   !important; font-weight: 500; }
+    .td-gold  { color: var(--gold)  !important; }
+
+    /* RULES LIST */
+    .rules-list { padding: 4px 0; }
+    .rule-item { display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-bottom: 0.5px solid var(--border); }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-status { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; transition: all 0.3s; }
+    .rule-status.pass    { background: var(--green-dim); color: var(--green); border: 0.5px solid var(--green-border); }
+    .rule-status.pending { background: var(--amber-dim); color: var(--amber); border: 0.5px solid var(--amber-border); }
+    .rule-status.breach  { background: var(--red-dim);   color: var(--red);   border: 0.5px solid var(--red-border); }
+    .rule-info { flex: 1; }
+    .rule-name { font-size: 13px; color: var(--text); }
+    .rule-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .rule-val  { font-size: 12px; font-weight: 500; text-align: right; transition: color 0.3s; }
+
+    /* CHART */
+    .chart-container { padding: 4px 22px 16px; }
+    svg.chart { width: 100%; overflow: visible; }
+    .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-top: 8px; }
+
+    /* INJECTOR */
+    .injector-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; border-top: 0.5px solid var(--border); background: var(--surface2); cursor: pointer; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; transition: color 0.15s; }
+    .injector-bar:hover { color: var(--gold); }
+    .injector-body { display: none; padding: 14px 22px; border-top: 0.5px solid var(--border); background: var(--surface2); }
+    .injector-body.open { display: block; }
+    .inj-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .inj-field { display: flex; flex-direction: column; gap: 5px; }
+    .inj-field label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+    .inj-field input, .inj-field select { background: var(--black); border: 0.5px solid var(--border); border-radius: 5px; padding: 8px 10px; font-size: 13px; color: var(--text); font-family: var(--font-body); outline: none; width: 100px; transition: border-color 0.2s; }
+    .inj-field input:focus, .inj-field select:focus { border-color: var(--border-gold); }
+    .inj-field select option { background: var(--surface2); }
+    .btn-inj { background: var(--gold); color: var(--black); border: none; padding: 8px 16px; border-radius: 5px; font-size: 12px; font-weight: 500; font-family: var(--font-body); cursor: pointer; height: 35px; transition: background 0.15s; }
+    .btn-inj:hover { background: var(--gold-light); }
+    .btn-inj-reset { background: transparent; color: var(--text-muted); border: 0.5px solid var(--border); padding: 8px 12px; border-radius: 5px; font-size: 12px; font-family: var(--font-body); cursor: pointer; height: 35px; transition: all 0.15s; }
+    .btn-inj-reset:hover { border-color: var(--red-border); color: var(--red); }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .stat-card:nth-child(1){animation:fadeIn 0.4s 0.05s ease both}
+    .stat-card:nth-child(2){animation:fadeIn 0.4s 0.10s ease both}
+    .stat-card:nth-child(3){animation:fadeIn 0.4s 0.15s ease both}
+    .stat-card:nth-child(4){animation:fadeIn 0.4s 0.20s ease both}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">iMAX <em>Funded</em></div>
+      <div class="logo-sub">Trader Portal</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <a class="nav-item active" href="#"><span class="nav-icon">◈</span> Dashboard</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▦</span> Trade History</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◉</span> Analytics</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Account</div>
+        <a class="nav-item" href="rules-engine.html"><span class="nav-icon">⚙</span> Rules Engine</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◆</span> Payouts</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▣</span> Documents</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Support</div>
+        <a class="nav-item" href="#"><span class="nav-icon">◎</span> Help Centre</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▷</span> Discord</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="trader-pill">
+        <div class="trader-avatar">KM</div>
+        <div>
+          <div class="trader-name">Kwame Mensah</div>
+          <div class="trader-plan">Accelerator · $100K</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Challenge Dashboard</h1>
+        <p id="topbarSub">Accelerator — $100,000 account</p>
+      </div>
+      <div class="topbar-right">
+        <div class="phase-badge" id="phaseBadge"><span class="phase-dot"></span><span id="phaseLabel">Phase 1 · Active</span></div>
+        <button class="btn-payout" id="payoutBtn" onclick="requestPayout()">Request Payout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="alert" id="alertBanner"><span class="alert-icon" id="alertIcon"></span><div id="alertMsg"></div></div>
+
+      <div class="stats-grid">
+        <div class="stat-card" id="sc-balance"><div class="stat-card-label">Account Balance</div><div class="stat-card-value gold" id="sv-balance">—</div><div class="stat-card-sub" id="ss-balance">—</div></div>
+        <div class="stat-card" id="sc-profit"><div class="stat-card-label">Total Profit</div><div class="stat-card-value" id="sv-profit">—</div><div class="stat-card-sub" id="ss-profit">—</div></div>
+        <div class="stat-card" id="sc-daily"><div class="stat-card-label">Daily Loss Used</div><div class="stat-card-value" id="sv-daily">—</div><div class="stat-card-sub" id="ss-daily">—</div></div>
+        <div class="stat-card" id="sc-dd"><div class="stat-card-label">Max Drawdown Used</div><div class="stat-card-value" id="sv-dd">—</div><div class="stat-card-sub" id="ss-dd">—</div></div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-card">
+          <div class="progress-card-title">Challenge Progress</div>
+          <div class="progress-item">
+            <div class="progress-header"><span class="progress-label">Profit target (10%)</span><span class="progress-value" id="pv-profit">—</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="pb-profit" style="width:0%"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header"><span class="progress-label">Daily loss limit (5%)</span><span class="progress-value" id="pv-daily">—</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="pb-daily" style="width:0%"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header"><span class="progress-label">Max drawdown (10%)</span><span class="progress-value" id="pv-dd">—</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="pb-dd" style="width:0%"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header"><span class="progress-label">Min trading days (5)</span><span class="progress-value" id="pv-days">—</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="pb-days" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-card-title">Equity Curve</div>
+          <div class="chart-container">
+            <svg class="chart" id="equityChart" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop id="gradStop" offset="0%" stop-color="#2ecc71" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#2ecc71" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="100" x2="400" y2="100" stroke="#1e1b26" stroke-width="0.5"/>
+              <line x1="0" y1="70"  x2="400" y2="70"  stroke="#1e1b26" stroke-width="0.5"/>
+              <line x1="0" y1="40"  x2="400" y2="40"  stroke="#1e1b26" stroke-width="0.5"/>
+              <line x1="0" y1="10"  x2="400" y2="10"  stroke="#1e1b26" stroke-width="0.5"/>
+              <line id="targetLine" x1="0" y1="28" x2="400" y2="28" stroke="#c9a227" stroke-width="0.5" stroke-dasharray="4 4"/>
+              <text id="targetLabel" x="320" y="24" fill="#c9a227" font-size="8" font-family="DM Sans,sans-serif">10% target</text>
+              <path id="chartArea" d="" fill="url(#eqGrad)"/>
+              <path id="chartLine" d="" stroke="#2ecc71" stroke-width="1.5" fill="none"/>
+            </svg>
+            <div class="chart-labels" id="chartLabels"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-grid">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Recent Trades</span><span class="panel-badge">Live MT5</span></div>
+          <table>
+            <thead><tr><th>Pair</th><th>Type</th><th>Lots</th><th>P&amp;L</th><th>Closed</th></tr></thead>
+            <tbody id="tradeTableBody"></tbody>
+          </table>
+          <div class="injector-bar" onclick="toggleInjector()">
+            <span>⚡ Inject test trade</span><span id="injChevron">▾</span>
+          </div>
+          <div class="injector-body" id="injectorBody">
+            <div class="inj-row">
+              <div class="inj-field"><label>Pair</label><select id="injPair"><option>XAUUSD</option><option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option><option>GBPJPY</option><option>USDCAD</option></select></div>
+              <div class="inj-field"><label>Dir</label><select id="injDir"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+              <div class="inj-field"><label>Lots</label><input type="number" id="injLots" value="0.50" min="0.01" step="0.01" /></div>
+              <div class="inj-field"><label>P&amp;L ($)</label><input type="number" id="injPnl" value="500" step="50" /></div>
+              <button class="btn-inj" onclick="injectTrade()">+ Add</button>
+              <button class="btn-inj-reset" onclick="resetAccount()">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Challenge Rules</span><span class="panel-badge" id="rulesBadge">Evaluating</span></div>
+          <div class="rules-list" id="rulesList"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── RULES ENGINE ──────────────────────────────────────────────────────────────
+const RULES = { dailyLossLimit:0.05, maxDrawdown:0.10, profitTarget:0.10, minTradingDays:5 };
+const ACCOUNT = { startingBalance:100000, trades:[] };
+
+function evaluate(account) {
+  const { startingBalance: sb, trades } = account;
+  const today = new Date().toISOString().slice(0,10);
+  const dailyPnl  = trades.filter(t=>t.closeTime.startsWith(today)).reduce((s,t)=>s+t.pnl,0);
+  const dailyPct  = Math.abs(Math.min(0,dailyPnl)) / sb;
+  const totalPnl  = trades.reduce((s,t)=>s+t.pnl,0);
+  const balance   = sb + totalPnl;
+  const profitPct = totalPnl / sb;
+  let peak=sb, maxDD=0, running=sb;
+  const equityPoints=[sb];
+  for(const t of trades){ running+=t.pnl; equityPoints.push(running); if(running>peak)peak=running; const dd=(peak-running)/sb; if(dd>maxDD)maxDD=dd; }
+  const tradingDays = new Set(trades.map(t=>t.closeTime.slice(0,10))).size;
+  const breaches=[];
+  if(dailyPct>=RULES.dailyLossLimit) breaches.push('DAILY_LOSS_LIMIT');
+  if(maxDD>=RULES.maxDrawdown)       breaches.push('MAX_DRAWDOWN');
+  const passed = breaches.length===0 && profitPct>=RULES.profitTarget && tradingDays>=RULES.minTradingDays;
+  return { balance, dailyPnl, dailyPct, profitPct, maxDD, tradingDays, breaches, passed, equityPoints };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const r=evaluate(ACCOUNT), sb=ACCOUNT.startingBalance;
+  const isB=r.breaches.length>0, isP=r.passed;
+  const pct=v=>(v*100).toFixed(2)+'%';
+  const usd=v=>'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // topbar
+  document.getElementById('topbarSub').textContent=`Accelerator — $${sb.toLocaleString()} account · ${ACCOUNT.trades.length} trades`;
+  const badge=document.getElementById('phaseBadge');
+  badge.className='phase-badge'+(isB?' breached':isP?' passed':'');
+  document.getElementById('phaseLabel').textContent=isB?'⚠ Account Suspended':isP?'✓ Challenge Passed':'Phase 1 · Active';
+  const pb=document.getElementById('payoutBtn'); pb.disabled=!isP;
+
+  // alert
+  const al=document.getElementById('alertBanner'); al.className='alert';
+  document.getElementById('alertIcon').textContent='';
+  if(isB){
+    const msgs={DAILY_LOSS_LIMIT:['⚠','danger','<strong>Daily loss limit breached.</strong> Account suspended — lost over 5% today.'],MAX_DRAWDOWN:['⚠','danger','<strong>Max drawdown breached.</strong> Account suspended — drawdown exceeded 10%.']};
+    const [ic,cl,mg]=msgs[r.breaches[0]]||['⚠','danger','Rule breached.'];
+    document.getElementById('alertIcon').textContent=ic; document.getElementById('alertMsg').innerHTML=mg; al.classList.add('visible',cl);
+  } else if(isP){
+    document.getElementById('alertIcon').textContent='🏆'; document.getElementById('alertMsg').innerHTML=`<strong>Challenge passed!</strong> Profit target hit across ${r.tradingDays} trading days. Request your funded account.`; al.classList.add('visible','success');
+  } else if(r.dailyPct>0.035){
+    document.getElementById('alertIcon').textContent='⚠'; document.getElementById('alertMsg').innerHTML=`<strong>Daily loss warning.</strong> ${pct(r.dailyPct)} of your 5% daily limit used today.`; al.classList.add('visible','warning');
+  } else if(r.maxDD>0.07){
+    document.getElementById('alertIcon').textContent='⚠'; document.getElementById('alertMsg').innerHTML=`<strong>Drawdown warning.</strong> Max drawdown at ${pct(r.maxDD)} — approaching 10% limit.`; al.classList.add('visible','warning');
+  }
+
+  // stat cards
+  function setCard(id,valId,subId,val,sub,colorCls,state){
+    document.getElementById(valId).className='stat-card-value '+colorCls;
+    document.getElementById(valId).textContent=val;
+    document.getElementById(subId).textContent=sub;
+    document.getElementById(id).className='stat-card'+(state?' '+state:'');
+  }
+  setCard('sc-balance','sv-balance','ss-balance',usd(r.balance),`Started at $${sb.toLocaleString()}`,'gold',isB?'breach':'');
+  const profCl=r.profitPct>=RULES.profitTarget?'green':r.profitPct<0?'red':'gold';
+  setCard('sc-profit','sv-profit','ss-profit',(r.profitPct>=0?'+':'-')+usd(r.balance-sb),`${r.profitPct>=0?'+':'-'}${pct(Math.abs(r.profitPct))} · Target: ${pct(RULES.profitTarget)}`,profCl,'');
+  const dCl=r.dailyPct>=RULES.dailyLossLimit?'red':r.dailyPct>0.035?'amber':'';
+  setCard('sc-daily','sv-daily','ss-daily',pct(r.dailyPct),`Limit: ${pct(RULES.dailyLossLimit)} · $${Math.max(0,sb*(RULES.dailyLossLimit-r.dailyPct)).toLocaleString('en-US',{maximumFractionDigits:0})} remaining`,dCl||'',r.dailyPct>=RULES.dailyLossLimit?'breach':r.dailyPct>0.035?'warn':'');
+  const ddCl=r.maxDD>=RULES.maxDrawdown?'red':r.maxDD>0.07?'amber':'';
+  setCard('sc-dd','sv-dd','ss-dd',pct(r.maxDD),`Limit: ${pct(RULES.maxDrawdown)} · $${Math.max(0,sb*(RULES.maxDrawdown-r.maxDD)).toLocaleString('en-US',{maximumFractionDigits:0})} remaining`,ddCl||'',r.maxDD>=RULES.maxDrawdown?'breach':r.maxDD>0.07?'warn':'');
+
+  // progress bars
+  function setBar(pbId,pvId,fillPct,barColor,textCl,label){
+    document.getElementById(pbId).style.cssText=`width:${Math.min(100,Math.max(0,fillPct))}%;background:${barColor}`;
+    document.getElementById(pvId).className='progress-value '+textCl;
+    document.getElementById(pvId).textContent=label;
+  }
+  setBar('pb-profit','pv-profit',(r.profitPct/RULES.profitTarget)*100,r.profitPct>=RULES.profitTarget?'var(--green)':'var(--gold)',r.profitPct>=RULES.profitTarget?'green':'gold',pct(Math.max(0,r.profitPct))+(r.profitPct>=RULES.profitTarget?' ✓':''));
+  setBar('pb-daily','pv-daily',(r.dailyPct/RULES.dailyLossLimit)*100,r.dailyPct>=RULES.dailyLossLimit?'var(--red)':r.dailyPct>0.035?'var(--amber)':'var(--gold)',r.dailyPct>=RULES.dailyLossLimit?'red':r.dailyPct>0.035?'amber':'gold',pct(r.dailyPct)+' used');
+  setBar('pb-dd','pv-dd',(r.maxDD/RULES.maxDrawdown)*100,r.maxDD>=RULES.maxDrawdown?'var(--red)':r.maxDD>0.07?'var(--amber)':'var(--gold)',r.maxDD>=RULES.maxDrawdown?'red':r.maxDD>0.07?'amber':'gold',pct(r.maxDD)+' used');
+  setBar('pb-days','pv-days',(r.tradingDays/RULES.minTradingDays)*100,r.tradingDays>=RULES.minTradingDays?'var(--green)':'var(--gold)',r.tradingDays>=RULES.minTradingDays?'green':'gold',r.tradingDays+' days'+(r.tradingDays>=RULES.minTradingDays?' ✓':''));
+
+  renderChart(r.equityPoints, sb);
+  renderTrades();
+  renderRules(r);
+}
+
+// ── CHART ─────────────────────────────────────────────────────────────────────
+function renderChart(pts, sb) {
+  if(pts.length<2) return;
+  const W=400,H=120,pT=14,pB=4;
+  const minV=Math.min(...pts,sb*0.87), maxV=Math.max(...pts,sb*1.13);
+  const rng=maxV-minV||1;
+  const tx=i=>(i/(pts.length-1))*W, ty=v=>pT+((1-(v-minV)/rng)*(H-pT-pB));
+  const coords=pts.map((v,i)=>[tx(i),ty(v)]);
+  let d=`M${coords[0][0]},${coords[0][1]}`;
+  for(let i=1;i<coords.length;i++){const[px,py]=coords[i-1],[cx,cy]=coords[i],mx=(px+cx)/2;d+=` C${mx},${py} ${mx},${cy} ${cx},${cy}`;}
+  const col=pts[pts.length-1]<sb?'#e74c3c':'#2ecc71';
+  document.getElementById('chartLine').setAttribute('d',d);
+  document.getElementById('chartLine').setAttribute('stroke',col);
+  document.getElementById('chartArea').setAttribute('d',d+` L${W},${H} L0,${H} Z`);
+  document.getElementById('gradStop').setAttribute('stop-color',col);
+  const tY=ty(sb*(1+RULES.profitTarget));
+  document.getElementById('targetLine').setAttribute('y1',tY);
+  document.getElementById('targetLine').setAttribute('y2',tY);
+  document.getElementById('targetLabel').setAttribute('y',tY-4);
+  const step=Math.max(1,Math.floor((pts.length-1)/5));
+  const vis=pts.reduce((a,_,i)=>i===0||i===pts.length-1||i%step===0?[...a,i]:a,[]);
+  document.getElementById('chartLabels').innerHTML=vis.map(i=>`<span>${i===0?'Start':i===pts.length-1?'Now':'T'+i}</span>`).join('');
+}
+
+// ── TRADES TABLE ──────────────────────────────────────────────────────────────
+function renderTrades() {
+  const trades=[...ACCOUNT.trades].reverse().slice(0,8);
+  if(!trades.length){document.getElementById('tradeTableBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:20px 22px">No trades yet — inject one below ↓</td></tr>';return;}
+  const fmtPnl=v=>{const a='$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return v>=0?`<span class="td-green">+${a}</span>`:`<span class="td-red">-${a}</span>`;};
+  const fmtTime=ts=>{const d=new Date(ts),t=ts.slice(0,10),td=new Date().toISOString().slice(0,10),yd=new Date(Date.now()-86400000).toISOString().slice(0,10);return t===td?'Today '+d.toTimeString().slice(0,5):t===yd?'Yesterday':'Day '+ts.slice(8,10);};
+  document.getElementById('tradeTableBody').innerHTML=trades.map((t,i)=>`<tr class="${i===0?'new-row':''}"><td>${t.pair}</td><td class="td-gold">${t.dir}</td><td>${t.lots.toFixed(2)}</td><td>${fmtPnl(t.pnl)}</td><td>${fmtTime(t.closeTime)}</td></tr>`).join('');
+}
+
+// ── RULES CHECKLIST ───────────────────────────────────────────────────────────
+function renderRules(r) {
+  const pct=v=>(v*100).toFixed(2)+'%';
+  const items=[
+    {name:'Profit target',desc:`Reach ${pct(RULES.profitTarget)} profit`,status:r.profitPct>=RULES.profitTarget?'pass':'pending',val:(r.profitPct>=0?'+':'')+pct(r.profitPct),color:r.profitPct>=RULES.profitTarget?'var(--green)':'var(--text-muted)'},
+    {name:'Daily loss limit',desc:`Max ${pct(RULES.dailyLossLimit)} loss per day`,status:r.breaches.includes('DAILY_LOSS_LIMIT')?'breach':'pass',val:pct(r.dailyPct)+' used',color:r.breaches.includes('DAILY_LOSS_LIMIT')?'var(--red)':r.dailyPct>0.035?'var(--amber)':'var(--green)'},
+    {name:'Max drawdown',desc:`Account must not drop ${pct(RULES.maxDrawdown)}`,status:r.breaches.includes('MAX_DRAWDOWN')?'breach':'pass',val:pct(r.maxDD)+' used',color:r.breaches.includes('MAX_DRAWDOWN')?'var(--red)':r.maxDD>0.07?'var(--amber)':'var(--green)'},
+    {name:'Min trading days',desc:`Trade on at least ${RULES.minTradingDays} different days`,status:r.tradingDays>=RULES.minTradingDays?'pass':'pending',val:r.tradingDays+' days',color:r.tradingDays>=RULES.minTradingDays?'var(--green)':'var(--text-muted)'},
+    {name:'News trading',desc:'Allowed on this plan',status:'pass',val:'Allowed',color:'var(--green)'},
+    {name:'No weekend holds',desc:'Positions closed by Friday 5pm',status:'pass',val:'Compliant',color:'var(--green)'},
+  ];
+  const icons={pass:'✓',pending:'·',breach:'✕'};
+  const passCount=items.filter(i=>i.status==='pass').length;
+  const hasB=items.some(i=>i.status==='breach');
+  const bdg=document.getElementById('rulesBadge');
+  if(hasB){bdg.style.cssText='background:var(--red-dim);border-color:var(--red-border);color:var(--red)';bdg.textContent='Breached';}
+  else if(passCount===items.length){bdg.style.cssText='background:rgba(46,204,113,0.1);border-color:var(--green-border);color:var(--green)';bdg.textContent=passCount+' / '+items.length+' Met';}
+  else{bdg.style.cssText='background:rgba(201,162,39,0.1);border-color:var(--border-gold);color:var(--gold)';bdg.textContent=passCount+' / '+items.length+' Met';}
+  document.getElementById('rulesList').innerHTML=items.map(it=>`<div class="rule-item"><div class="rule-status ${it.status}">${icons[it.status]}</div><div class="rule-info"><div class="rule-name">${it.name}</div><div class="rule-desc">${it.desc}</div></div><div class="rule-val" style="color:${it.color}">${it.val}</div></div>`).join('');
+}
+
+// ── INJECT / RESET ────────────────────────────────────────────────────────────
+let seq=1;
+function ts(ago=0){const d=new Date();d.setDate(d.getDate()-ago);return d.toISOString().slice(0,10)+'T'+d.toTimeString().slice(0,8);}
+function injectTrade(){
+  ACCOUNT.trades.push({id:'T'+(seq++).toString().padStart(4,'0'),pair:document.getElementById('injPair').value,dir:document.getElementById('injDir').value,lots:parseFloat(document.getElementById('injLots').value)||0.5,pnl:parseFloat(document.getElementById('injPnl').value)||0,closeTime:ts(0)});
+  render();
+}
+function resetAccount(){if(!confirm('Reset all trades?'))return;ACCOUNT.trades=[];seq=1;render();}
+function toggleInjector(){const b=document.getElementById('injectorBody'),c=document.getElementById('injChevron'),o=b.classList.toggle('open');c.textContent=o?'▴':'▾';}
+function requestPayout(){alert('Payout request submitted! Processing within 24h.');}
+
+// ── SEED DATA ─────────────────────────────────────────────────────────────────
+[{pair:'XAUUSD',dir:'BUY',lots:0.5,pnl:2100,ago:13},{pair:'EURUSD',dir:'SELL',lots:1,pnl:-210,ago:12},{pair:'XAUUSD',dir:'BUY',lots:0.4,pnl:1800,ago:11},{pair:'GBPJPY',dir:'BUY',lots:0.3,pnl:890,ago:9},{pair:'USDJPY',dir:'SELL',lots:0.75,pnl:560,ago:7},{pair:'EURUSD',dir:'BUY',lots:1,pnl:-320,ago:5},{pair:'XAUUSD',dir:'BUY',lots:0.5,pnl:1400,ago:3},{pair:'GBPUSD',dir:'SELL',lots:0.6,pnl:720,ago:2},{pair:'XAUUSD',dir:'BUY',lots:0.5,pnl:1240,ago:0},{pair:'EURUSD',dir:'SELL',lots:1,pnl:-320,ago:0}].forEach(t=>ACCOUNT.trades.push({id:'T'+(seq++).toString().padStart(4,'0'),pair:t.pair,dir:t.dir,lots:t.lots,pnl:t.pnl,closeTime:ts(t.ago)}));
+
+render();
+</script>
+</body>
+</html>
